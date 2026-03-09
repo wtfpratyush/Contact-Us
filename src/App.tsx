@@ -1,16 +1,42 @@
 import React, { useState } from 'react';
-import { MapPin, ArrowRight, Linkedin, Twitter, Facebook, Youtube, Instagram, CheckCircle2 } from 'lucide-react';
+import { MapPin, ArrowRight, Linkedin, Twitter, Facebook, Youtube, Instagram, CheckCircle2, Check, Building2, FileText, Calculator, Landmark, CreditCard, Globe, Briefcase, MessageSquare } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+
+const SERVICE_OPTIONS = [
+  { id: 'company-formation', label: 'Company Formation', icon: Building2 },
+  { id: 'visa-pro', label: 'Visa & PRO Services', icon: FileText },
+  { id: 'financial-tax', label: 'Financial & Tax Advisory', icon: Calculator },
+  { id: 'corporate-tax', label: 'Corporate Tax', icon: Landmark },
+  { id: 'accounting', label: 'Accounting & Bookkeeping', icon: CreditCard },
+  { id: 'bank-account', label: 'Bank Account Opening', icon: Globe },
+  { id: 'trade-license', label: 'Trade License Renewal', icon: Briefcase },
+  { id: 'custom', label: 'Custom Request', icon: MessageSquare },
+];
 
 export default function App() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
     email: '',
-    message: ''
+    customMessage: ''
   });
 
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const toggleService = (serviceId: string) => {
+    setSelectedServices(prev =>
+      prev.includes(serviceId)
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
+    if (errors.services) {
+      setErrors(prev => ({ ...prev, services: '' }));
+    }
+  };
+
+  const isCustomSelected = selectedServices.includes('custom');
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -28,7 +54,13 @@ export default function App() {
       newErrors.email = 'Invalid email format';
     }
 
-    if (!formData.message.trim()) newErrors.message = 'Message is required';
+    if (selectedServices.length === 0) {
+      newErrors.services = 'Please select at least one service';
+    }
+
+    if (isCustomSelected && !formData.customMessage.trim()) {
+      newErrors.customMessage = 'Please describe your custom request';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -38,7 +70,8 @@ export default function App() {
     e.preventDefault();
     if (validateForm()) {
       setIsSubmitted(true);
-      setFormData({ name: '', phone: '', email: '', message: '' });
+      setFormData({ name: '', phone: '', email: '', customMessage: '' });
+      setSelectedServices([]);
       setTimeout(() => setIsSubmitted(false), 5000);
     }
   };
@@ -132,10 +165,10 @@ export default function App() {
             {/* Left: Form */}
             <div className="p-8 md:p-12">
               <h2 className="text-3xl md:text-4xl font-medium tracking-tight mb-2 leading-tight">
-                Send us your details
+                How can we help you?
               </h2>
               <p className="text-sm text-black/50 mb-10">
-                Fill out the form below and our experts will get back to you shortly.
+                Select the services you're interested in and we'll get back to you with a tailored proposal.
               </p>
 
               <form className="space-y-6" onSubmit={handleSubmit}>
@@ -177,18 +210,129 @@ export default function App() {
                   />
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-black/50 block">Message</label>
-                  <textarea
-                    rows={4}
-                    name="message"
-                    value={formData.message}
-                    onChange={handleChange}
-                    placeholder="Write your message here"
-                    className={`w-full bg-[#F9F9F8] border rounded-xl px-5 py-4 text-sm focus:bg-white focus:ring-1 outline-none transition-all placeholder:text-black/30 hover:border-black/20 resize-none ${errors.message ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-black/5 focus:border-black focus:ring-black'}`}
-                  ></textarea>
-                  {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message}</p>}
+
+                {/* Service Selection Chips */}
+                <div className="space-y-3">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-black/50 block">
+                    What do you need help with?
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {SERVICE_OPTIONS.map((service) => {
+                      const isSelected = selectedServices.includes(service.id);
+                      const Icon = service.icon;
+                      return (
+                        <motion.button
+                          key={service.id}
+                          type="button"
+                          onClick={() => toggleService(service.id)}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.97 }}
+                          animate={{
+                            backgroundColor: isSelected ? '#111111' : '#F9F9F8',
+                            color: isSelected ? '#ffffff' : '#111111',
+                          }}
+                          transition={{ duration: 0.2, ease: 'easeOut' }}
+                          className={`
+                            relative flex items-center gap-2.5 px-5 py-3 rounded-xl text-sm font-medium
+                            border cursor-pointer select-none
+                            transition-shadow duration-200
+                            ${isSelected
+                              ? 'border-black/20 shadow-lg shadow-black/10'
+                              : 'border-black/8 hover:border-black/20 hover:shadow-sm'
+                            }
+                            ${service.id === 'custom' && !isSelected
+                              ? 'border-dashed border-black/20'
+                              : ''
+                            }
+                          `}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" style={{ opacity: isSelected ? 1 : 0.5 }} />
+                          <span>{service.label}</span>
+                          <AnimatePresence>
+                            {isSelected && (
+                              <motion.span
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                                transition={{ duration: 0.15 }}
+                                className="ml-1"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                              </motion.span>
+                            )}
+                          </AnimatePresence>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                  {errors.services && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-red-500 text-xs mt-1"
+                    >
+                      {errors.services}
+                    </motion.p>
+                  )}
+
+                  {/* Selected services summary */}
+                  <AnimatePresence>
+                    {selectedServices.length > 0 && !isCustomSelected && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.25 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2 pt-2 text-xs text-black/40">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                          <span>
+                            {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
+                {/* Custom Request Text Area - only shows when "Custom Request" is selected */}
+                <AnimatePresence>
+                  {isCustomSelected && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-[11px] font-bold uppercase tracking-widest text-black/50 block">
+                          Describe your request
+                        </label>
+                        <textarea
+                          rows={3}
+                          name="customMessage"
+                          value={formData.customMessage}
+                          onChange={handleChange}
+                          placeholder="Tell us about your specific requirements..."
+                          className={`w-full bg-[#F9F9F8] border rounded-xl px-5 py-4 text-sm focus:bg-white focus:ring-1 outline-none transition-all placeholder:text-black/30 hover:border-black/20 resize-none ${errors.customMessage ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-black/5 focus:border-black focus:ring-black'}`}
+                        ></textarea>
+                        {errors.customMessage && <p className="text-red-500 text-xs mt-1">{errors.customMessage}</p>}
+
+                        {selectedServices.length > 1 && (
+                          <div className="flex items-center gap-2 text-xs text-black/40">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
+                            <span>
+                              {selectedServices.length} service{selectedServices.length > 1 ? 's' : ''} selected (including custom request)
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <div className="pt-2">
                   <button type="submit" className="group w-full bg-black text-white rounded-xl py-4 text-sm font-semibold tracking-wide flex items-center justify-center gap-2 hover:bg-black/90 transition-all active:scale-[0.99] shadow-lg shadow-black/10">
                     {isSubmitted ? (
